@@ -1,0 +1,50 @@
+package com.jobportal.controller;
+
+import com.jobportal.entity.User;
+import com.jobportal.dto.LoginRequest;
+import com.jobportal.repository.UserRepository;
+import com.jobportal.security.JwtUtil;
+import com.jobportal.service.UserService;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+
+    @Autowired
+    private UserService userService;
+
+    // Register User API
+    @PostMapping("/register")
+    public User registerUser(@RequestBody User user) {
+        return userService.registerUser(user);
+    }
+
+    // Login User API
+    @Autowired
+    private UserRepository userRepository;
+
+    @PostMapping("/login")
+    public Map<String,String> login(@RequestBody LoginRequest request){
+
+        User user = userRepository
+                .findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Invalid email"));
+
+        if(!user.getPassword().equals(request.getPassword())){
+            throw new RuntimeException("Invalid password");
+        }
+
+        String token = JwtUtil.generateToken(user.getEmail());
+
+        Map<String,String> response = new HashMap<>();
+        response.put("token",token);
+
+        return response;
+    }
+}
